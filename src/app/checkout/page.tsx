@@ -145,11 +145,39 @@ export default function CheckoutPage() {
               <textarea
                 id="notes"
                 className="form-textarea form-input"
-                rows={4}
+                rows={3}
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 placeholder="Contoh: Mohon dikirim segera, saya ambil di kosan."
               />
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <p className={styles.fieldLabel}>Metode Pembayaran</p>
+              <div className={styles.optionRow}>
+                <button
+                  type="button"
+                  className={`${styles.optionBtn} ${styles.optionActive}`}
+                >
+                  Transfer Manual
+                </button>
+                <button
+                  type="button"
+                  className={styles.optionBtn}
+                  disabled
+                  title="Akan datang"
+                >
+                  Midtrans / QRIS
+                </button>
+                <button
+                  type="button"
+                  className={styles.optionBtn}
+                  disabled
+                  title="Akan datang"
+                >
+                  COD
+                </button>
+              </div>
             </div>
           </section>
 

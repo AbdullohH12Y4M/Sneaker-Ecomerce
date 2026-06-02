@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Heart } from 'lucide-react';
+import { FiShoppingBag, FiHeart } from 'react-icons/fi';
 import { useState } from 'react';
 import type { Product } from '@/types';
 import { formatPrice } from '@/lib/utils';
@@ -32,7 +32,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.06 }}
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -4, scale: 1.02 }}
     >
       {/* Image */}
       <Link href={`/products/${product.slug}`} className={styles.imageWrap}>
@@ -41,11 +41,14 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
           src={displayImage}
           alt={product.name}
           className={styles.image}
+          loading="lazy"
           onError={() => setImgError(true)}
         />
-        {isOutOfStock && (
+        {isOutOfStock ? (
           <div className={styles.soldOutBadge}>Habis</div>
-        )}
+        ) : product.discount ? (
+          <div className={styles.discountBadge}>-{product.discount}%</div>
+        ) : null}
         <div className={styles.overlay}>
           <span className={styles.overlayText}>Lihat Detail</span>
         </div>
@@ -54,11 +57,15 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
       {/* Wishlist */}
       <button
         className={`${styles.wishlistBtn} ${wishlisted ? styles.wishlisted : ''}`}
-        onClick={(e) => { e.preventDefault(); setWishlisted(!wishlisted); }}
+        onClick={(e) => {
+          e.preventDefault();
+          setWishlisted(!wishlisted);
+        }}
         aria-label="Tambah ke wishlist"
       >
-        <Heart size={16} fill={wishlisted ? 'currentColor' : 'none'} />
+        <FiHeart size={16} style={{ fill: wishlisted ? 'currentColor' : 'transparent' }} />
       </button>
+
 
       {/* Info */}
       <div className={styles.info}>
@@ -85,18 +92,40 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         </Link>
 
         <div className={styles.footer}>
-          <span className={`price ${styles.price}`}>{formatPrice(product.basePrice)}</span>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {product.discount && (
+              <span style={{ fontSize: '0.75rem', textDecoration: 'line-through', color: 'var(--color-text-faint)' }}>
+                {formatPrice(product.basePrice)}
+              </span>
+            )}
+            <span className={`price ${styles.price}`}>
+              {formatPrice(product.discount ? product.basePrice * (1 - product.discount / 100) : product.basePrice)}
+            </span>
+          </div>
           {!isOutOfStock && (
-            <Link
-              href={`/products/${product.slug}`}
-              className={`btn btn-primary btn-sm ${styles.addBtn}`}
-            >
-              <ShoppingBag size={14} />
-              Beli
-            </Link>
+              <Link
+                href={`/products/${product.slug}`}
+                className={`btn btn-primary btn-sm ${styles.addBtn}`}
+              >
+                <FiShoppingBag size={14} />
+                Beli
+              </Link>
           )}
         </div>
       </div>
     </motion.div>
+  );
+}
+
+export function ProductCardSkeleton() {
+  return (
+    <div className={styles.card}>
+      <div className={`${styles.imageWrap} skeleton`} style={{ aspectRatio: '1/1' }} />
+      <div className={styles.info}>
+        <div className="skeleton" style={{ width: '40%', height: '14px', marginBottom: '12px' }} />
+        <div className="skeleton" style={{ width: '80%', height: '20px', marginBottom: '12px' }} />
+        <div className="skeleton" style={{ width: '60%', height: '24px' }} />
+      </div>
+    </div>
   );
 }

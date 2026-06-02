@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   if (session) {
     return (
@@ -120,65 +122,119 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {isRegister && (
-            <div className={styles.fieldGroup}>
-              <label className="form-label" htmlFor="name">Nama Lengkap</label>
-              <input
-                id="name"
-                className="form-input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nama kamu"
-              />
-            </div>
-          )}
-
-          <div className={styles.fieldGroup}>
-            <label className="form-label" htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              className="form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@kampus.ac.id"
-            />
-          </div>
-
-          <div className={styles.fieldGroup}>
-            <label className="form-label" htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              className="form-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimal 6 karakter"
-            />
-          </div>
-
-          {isRegister && (
-            <div className={styles.fieldGroup}>
-              <label className="form-label" htmlFor="confirmPassword">Konfirmasi Password</label>
-              <input
-                id="confirmPassword"
-                type="password"
-                className="form-input"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Ulangi password"
-              />
-            </div>
-          )}
-
-          <button
-            type="button"
-            className="btn btn-primary btn-full"
-            onClick={isRegister ? handleRegister : handleCredentialsSignIn}
-            disabled={loading}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              isRegister ? handleRegister() : handleCredentialsSignIn();
+            }}
           >
-            {isRegister ? 'Daftar Akun' : 'Masuk'}
-          </button>
+            {isRegister && (
+              <div className={styles.fieldGroup}>
+                <label className="form-label" htmlFor="name">Nama Lengkap</label>
+                <input
+                  id="name"
+                  className="form-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nama kamu"
+                  required={isRegister}
+                />
+              </div>
+            )}
+
+            <div className={styles.fieldGroup}>
+              <label className="form-label" htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                className="form-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="email@kampus.ac.id"
+                required
+              />
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <label className="form-label" htmlFor="password">Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="form-input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Minimal 6 karakter"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-text-muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {showPassword ? 'Sembunyikan' : 'Lihat'}
+                </button>
+              </div>
+              {isRegister && password.length > 0 && (
+                <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
+                  <div style={{ height: '4px', flex: 1, borderRadius: '2px', background: password.length > 0 ? (password.length >= 6 ? 'var(--color-success)' : 'var(--color-danger)') : 'var(--color-surface-3)' }} />
+                  <div style={{ height: '4px', flex: 1, borderRadius: '2px', background: password.length >= 6 ? (password.match(/[0-9]/) || password.match(/[^a-zA-Z0-9]/) ? 'var(--color-success)' : 'var(--color-warning)') : 'var(--color-surface-3)' }} />
+                  <div style={{ height: '4px', flex: 1, borderRadius: '2px', background: password.length >= 8 && password.match(/[0-9]/) && password.match(/[^a-zA-Z0-9]/) ? 'var(--color-success)' : 'var(--color-surface-3)' }} />
+                </div>
+              )}
+            </div>
+
+            {isRegister && (
+              <div className={styles.fieldGroup}>
+                <label className="form-label" htmlFor="confirmPassword">Konfirmasi Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    className="form-input"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Ulangi password"
+                    required={isRegister}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--color-text-muted)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showConfirmPassword ? 'Sembunyikan' : 'Lihat'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-full"
+              disabled={loading}
+              style={{ marginTop: '16px' }}
+            >
+              {isRegister ? 'Daftar Akun' : 'Masuk'}
+            </button>
+          </form>
 
           {message && (
             <p className={message.includes('berhasil') ? 'form-text hint text-success' : 'form-error'}>

@@ -1,15 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from '@/components/shop/ProductCard';
 import FilterSidebar from '@/components/shop/FilterSidebar';
 import { useShopStore } from '@/store/shop';
 import styles from './page.module.css';
 export default function HomePage() {
+  const router = useRouter();
   const products = useShopStore((state) => state.products);
   const params = useSearchParams();
+  const [searchInput, setSearchInput] = useState(params.get('search') ?? '');
   const category = params.get('category') ?? '';
   const color = params.get('color') ?? '';
   const size = Number(params.get('size') ?? '0');
@@ -41,6 +43,30 @@ export default function HomePage() {
             Jelajahi katalog sepatu untuk mahasiswa: sneakers, kasual, formal, dan sandal dengan filter harga, ukuran, warna, dan stok tersedia.
           </p>
           <div className={styles.heroActions}>
+            <form
+              className={styles.heroSearch}
+              onSubmit={(event) => {
+                event.preventDefault();
+                const query = new URLSearchParams(params.toString());
+                if (searchInput.trim()) {
+                  query.set('search', searchInput.trim());
+                } else {
+                  query.delete('search');
+                }
+                router.push(`/?${query.toString()}`);
+              }}
+            >
+              <input
+                type="search"
+                placeholder="Cari produk, warna, atau ukuran"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                className="form-input"
+              />
+              <button type="submit" className="btn btn-primary btn-lg">
+                Cari
+              </button>
+            </form>
             <Link href="/cart" className="btn btn-primary btn-lg">
               Buka Keranjang
             </Link>

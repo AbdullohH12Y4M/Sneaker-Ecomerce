@@ -42,9 +42,11 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!session?.user || session.user.role !== 'ADMIN') {
-      setLoading(false);
+      // keep effects pure: only update state via functional setters
+      setLoading((_) => false);
       return;
     }
+
 
     const fetchOrders = async () => {
       try {
@@ -79,34 +81,12 @@ export default function AdminPage() {
     }
   };
 
-  if (!session) {
-    return (
-      <div className="container" style={{ padding: '40px 0' }}>
-        <div className={styles.emptyState}>
-          <p>Anda harus login sebagai admin untuk membuka dashboard ini.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (session.user.role !== 'ADMIN') {
-    return (
-      <div className="container" style={{ padding: '40px 0' }}>
-        <div className={styles.emptyState}>
-          <p>Maaf, akses dashboard admin dibatasi untuk role ADMIN.</p>
-        </div>
-      </div>
-    );
+  if (!session || session.user.role !== 'ADMIN') {
+    return null;
   }
 
   return (
-    <div className="container" style={{ padding: '40px 0' }}>
-      <div className={styles.adminHeader}>
-        <div>
-          <p className="sectionLabel">Admin Dashboard</p>
-          <h1 className="sectionTitle">Kelola status pesanan</h1>
-        </div>
-      </div>
+    <div>
 
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>

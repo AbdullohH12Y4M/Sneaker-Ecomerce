@@ -10,16 +10,56 @@
 }
 
 .imagePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mainImageWrap {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   overflow: hidden;
   background: var(--color-surface-2);
+  aspect-ratio: 1 / 1;
+  cursor: zoom-in;
+  position: relative;
 }
 
 .productImage {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform var(--transition-base);
+}
+
+.productImageZoomed {
+  transform: scale(2);
+  cursor: zoom-out;
+}
+
+.galleryRow {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.thumbnail {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  cursor: pointer;
+  object-fit: cover;
+  opacity: 0.6;
+  transition: all var(--transition-fast);
+}
+.thumbnail:hover {
+  opacity: 0.8;
+}
+.thumbnailActive {
+  opacity: 1;
+  border-color: var(--color-primary);
 }
 
 .detailsPanel {
@@ -85,12 +125,16 @@
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
   transition: all var(--transition-fast);
+  cursor: pointer;
+}
+.colorPill:hover, .sizePill:hover {
+  background: var(--color-surface-3);
 }
 
 .colorPillActive,
 .sizePillActive {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.2);
 }
 
 .actionsRow {

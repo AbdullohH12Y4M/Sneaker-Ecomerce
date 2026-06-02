@@ -19,6 +19,7 @@ export interface Product {
   slug: string;
   description: string;
   basePrice: number;
+  discount?: number;
   category: ProductCategory;
   images: string[];
   skus: ProductSKU[];

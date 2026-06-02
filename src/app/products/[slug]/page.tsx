@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ShoppingBag, ArrowLeft } from 'lucide-react';
+
 import { useCartStore } from '@/store/cart';
 import { useShopStore } from '@/store/shop';
 import { formatPrice } from '@/lib/utils';
@@ -23,6 +24,16 @@ export default function ProductDetailPage() {
     [products, slug]
   );
 
+
+  const [activeImage, setActiveImage] = useState('');
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  useEffect(() => {
+    if (product && product.images && product.images.length > 0) {
+      setActiveImage(product.images[0]);
+    }
+  }, [product]);
+
   if (!product) {
     return (
       <div className="container" style={{ padding: '40px 0' }}>
@@ -36,6 +47,7 @@ export default function ProductDetailPage() {
       </div>
     );
   }
+
 
   const availableColors = useMemo(() => {
     return Array.from(new Set(product.skus.filter((sku) => sku.stock > 0).map((sku) => sku.color)));
@@ -54,7 +66,8 @@ export default function ProductDetailPage() {
     return product.skus.find((sku) => sku.color === selectedColor && sku.size === selectedSize) ?? null;
   }, [product, selectedColor, selectedSize]);
 
-  const selectedImage = product.images?.[0] ?? 'https://placehold.co/600x600/1a1a24/f97316?text=SneakerLocal';
+  const fallbackImage = 'https://placehold.co/600x600/1a1a24/f97316?text=SneakerLocal';
+  const displayImage = activeImage || fallbackImage;
 
   useEffect(() => {
     if (availableColors.length && !selectedColor) {
@@ -84,7 +97,7 @@ export default function ProductDetailPage() {
       productId: product.id,
       productName: product.name,
       productSlug: product.slug,
-      image: selectedImage,
+      image: displayImage,
       color: selectedSku.color,
       colorHex: selectedSku.colorHex,
       size: selectedSku.size,
@@ -94,6 +107,10 @@ export default function ProductDetailPage() {
     });
     setStatus('Berhasil ditambahkan ke keranjang.');
   };
+
+  const currentPrice = product.discount 
+    ? product.basePrice * (1 - product.discount / 100) 
+    : product.basePrice;
 
   return (
     <div className="container" style={{ padding: '40px 0' }}>
@@ -105,7 +122,30 @@ export default function ProductDetailPage() {
 
       <div className={styles.productLayout}>
         <div className={styles.imagePanel}>
-          <img src={selectedImage} alt={product.name} className={styles.productImage} />
+          <div 
+            className={styles.mainImageWrap}
+            onClick={() => setIsZoomed(!isZoomed)}
+            onMouseLeave={() => setIsZoomed(false)}
+          >
+            <img 
+              src={displayImage} 
+              alt={product.name} 
+              className={`${styles.productImage} ${isZoomed ? styles.productImageZoomed : ''}`} 
+            />
+          </div>
+          {product.images && product.images.length > 1 && (
+            <div className={styles.galleryRow}>
+              {product.images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={img}
+                  alt={`${product.name} ${idx + 1}`}
+                  className={`${styles.thumbnail} ${activeImage === img ? styles.thumbnailActive : ''}`}
+                  onClick={() => setActiveImage(img)}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <div className={styles.detailsPanel}>
@@ -115,7 +155,14 @@ export default function ProductDetailPage() {
           </div>
           <h1 className={styles.productTitle}>{product.name}</h1>
           <p className={styles.description}>{product.description}</p>
-          <p className={`${styles.price} price-xl`}>{formatPrice(product.basePrice)}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {product.discount && (
+              <span style={{ fontSize: '1.1rem', textDecoration: 'line-through', color: 'var(--color-text-faint)' }}>
+                {formatPrice(product.basePrice)}
+              </span>
+            )}
+            <p className={`${styles.price} price-xl`}>{formatPrice(currentPrice)}</p>
+          </div>
 
           <div className={styles.variantSection}>
             <div>

@@ -57,9 +57,10 @@ export default function OrdersPage() {
 
   useEffect(() => {
     if (!session) {
-      setLoading(false);
+      setLoading((_) => false);
       return;
     }
+
 
     const fetchOrders = async () => {
       try {

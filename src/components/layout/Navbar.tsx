@@ -3,8 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { ShoppingBag, User, Search, Menu, X, LogOut, Settings, Package } from 'lucide-react';
+import {
+  FiSearch,
+  FiMenu,
+  FiX,
+  FiLogOut,
+  FiSettings,
+  FiArchive,
+  FiUser,
+  FiShoppingBag
+} from 'react-icons/fi';
 import { useCartStore } from '@/store/cart';
+import { useShopStore } from '@/store/shop';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './Navbar.module.css';
@@ -26,6 +36,11 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const totalItems = getTotalItems();
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const products = useShopStore((state) => state.products);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', onScroll);
@@ -35,6 +50,20 @@ export default function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const searchResults = debouncedSearch
+    ? products.filter((p) =>
+        p.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        p.description.toLowerCase().includes(debouncedSearch.toLowerCase())
+      ).slice(0, 5)
+    : [];
 
   return (
     <header className={`${styles.navbar} ${scrolled ? styles.scrolled : ''}`}>
@@ -66,13 +95,48 @@ export default function Navbar() {
           {/* Actions */}
           <div className={styles.actions}>
             {/* Search */}
-            <Link href="/?search=" className="btn btn-ghost btn-icon hide-mobile" aria-label="Cari produk">
-              <Search size={20} />
-            </Link>
+            <div className={styles.searchContainer}>
+              {isSearchOpen ? (
+                <div className={styles.searchWrapper}>
+                  <input
+                    type="text"
+                    className={`form-input ${styles.searchInput}`}
+                    placeholder="Cari sepatu..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                  />
+                  <button className={styles.searchClose} onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}>
+                    <FiX size={18} />
+                  </button>
+                  {searchQuery && (
+                    <div className={styles.searchResults}>
+                      {searchResults.length > 0 ? (
+                        searchResults.map((p) => (
+                          <Link key={p.id} href={`/products/${p.slug}`} className={styles.searchItem} onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}>
+                            <img src={p.images[0]} alt={p.name} className={styles.searchItemImage} />
+                            <div>
+                              <div className={styles.searchItemName}>{p.name}</div>
+                              <div className={styles.searchItemPrice}>Rp{p.basePrice.toLocaleString('id-ID')}</div>
+                            </div>
+                          </Link>
+                        ))
+                      ) : (
+                        <div className={styles.searchEmpty}>Tidak ada hasil untuk "{searchQuery}"</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button className="btn btn-ghost btn-icon hide-mobile" onClick={() => setIsSearchOpen(true)} aria-label="Cari produk">
+                  <FiSearch size={20} />
+                </button>
+              )}
+            </div>
 
             {/* Cart */}
             <Link href="/cart" className={styles.cartBtn} aria-label="Keranjang belanja">
-              <ShoppingBag size={20} />
+              <FiShoppingBag size={20} />
               <AnimatePresence>
                 {totalItems > 0 && (
                   <motion.span
@@ -121,11 +185,11 @@ export default function Navbar() {
                       </div>
                       <hr className="divider" />
                       <Link href="/orders" className={styles.dropdownItem} onClick={() => setUserMenuOpen(false)}>
-                        <Package size={16} /> Pesanan Saya
+                        <FiArchive size={16} /> Pesanan Saya
                       </Link>
                       {session.user?.role === 'ADMIN' && (
                         <Link href="/admin" className={styles.dropdownItem} onClick={() => setUserMenuOpen(false)}>
-                          <Settings size={16} /> Dashboard Admin
+                          <FiSettings size={16} /> Dashboard Admin
                         </Link>
                       )}
                       <hr className="divider" />
@@ -133,7 +197,7 @@ export default function Navbar() {
                         className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`}
                         onClick={() => { signOut(); setUserMenuOpen(false); }}
                       >
-                        <LogOut size={16} /> Keluar
+                        <FiLogOut size={16} /> Keluar
                       </button>
                     </motion.div>
                   )}
@@ -141,7 +205,7 @@ export default function Navbar() {
               </div>
             ) : (
               <Link href="/login" className="btn btn-primary btn-sm hide-mobile">
-                <User size={16} /> Masuk
+                <FiUser size={16} /> Masuk
               </Link>
             )}
 
@@ -151,7 +215,7 @@ export default function Navbar() {
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
-              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+              {mobileOpen ? <FiX size={22} /> : <FiMenu size={22} />}
             </button>
           </div>
         </div>
@@ -169,13 +233,13 @@ export default function Navbar() {
           >
             <div className={styles.mobileLinks}>
               {NAV_LINKS.map((link) => (
-                <Link key={link.href} href={link.href} className={styles.mobileLink}>
+                <Link key={link.href} href={link.href} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
                   {link.label}
                 </Link>
               ))}
               {!session && (
-                <Link href="/login" className="btn btn-primary btn-full" style={{ marginTop: 8 }}>
-                  <User size={16} /> Masuk
+                <Link href="/login" className="btn btn-primary btn-full" style={{ marginTop: 8 }} onClick={() => setMobileOpen(false)}>
+                  <FiUser size={16} /> Masuk
                 </Link>
               )}
             </div>
