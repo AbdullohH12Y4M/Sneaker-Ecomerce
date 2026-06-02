@@ -1,0 +1,106 @@
+.adminHeader {
+  margin-bottom: 28px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  padding: 24px;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+}
+
+.adminGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.cardSection {
+  padding: 24px;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+}
+
+.productTable,
+.orderTable {
+  display: grid;
+  gap: 18px;
+}
+
+.productCard,
+.orderRow {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+}
+
+.skuRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.orderActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.productFormSection {
+  padding: 24px;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.fieldGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.actionRow {
+  margin-top: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.emptyState {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-2);
+  padding: 40px;
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  .adminGrid,
+  .formGrid,
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}

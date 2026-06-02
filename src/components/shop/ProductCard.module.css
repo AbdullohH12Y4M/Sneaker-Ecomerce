@@ -1,0 +1,149 @@
+.card {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.card:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-lg);
+}
+.outOfStock { opacity: 0.6; }
+
+/* Image */
+.imageWrap {
+  display: block;
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--color-bg-3);
+  overflow: hidden;
+}
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card:hover .image { transform: scale(1.06); }
+
+.soldOutBadge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.75);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(6px);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(249, 115, 22, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+.card:hover .overlay { opacity: 1; }
+.overlayText {
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  transform: translateY(6px);
+  transition: transform var(--transition-base);
+}
+.card:hover .overlayText { transform: translateY(0); }
+
+/* Wishlist */
+.wishlistBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  z-index: 2;
+}
+.wishlistBtn:hover {
+  background: var(--color-danger-dim);
+  color: var(--color-danger);
+  border-color: rgba(239,68,68,0.3);
+}
+.wishlisted { color: var(--color-danger) !important; }
+
+/* Info */
+.info {
+  padding: 14px;
+}
+
+.swatches {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+  border: 2px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+.swatchMore {
+  font-size: 0.7rem;
+  color: var(--color-text-faint);
+}
+
+.name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 12px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.price {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.addBtn {
+  flex-shrink: 0;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: all var(--transition-base);
+}
+.card:hover .addBtn {
+  opacity: 1;
+  transform: translateX(0);
+}

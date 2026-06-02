@@ -1,0 +1,62 @@
+.loginGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.introCard,
+.formCard {
+  padding: 32px;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  display: grid;
+  gap: 18px;
+}
+
+.toggleRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.toggleBtn {
+  flex: 1;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.toggleActive {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.35);
+}
+
+.fieldGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.loggedIn {
+  padding: 40px;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  display: grid;
+  gap: 18px;
+}
+
+.loggedInActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .loginGrid {
+    grid-template-columns: 1fr;
+  }
+}
