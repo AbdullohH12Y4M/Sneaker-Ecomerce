@@ -5,7 +5,7 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "baseUrl", "value": "https://sneakerlocal.up.railway.app" },
     { "key": "accessToken", "value": "" },
     { "key": "callbackUrl", "value": "/" }
   ],
@@ -14,7 +14,7 @@
       "name": "Auth (Backend)",
       "item": [
         {
-          "name": "Register",
+          "name": "Register (customer)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -25,7 +25,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Nama Lengkap\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}\n",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}\n",
               "options": { "raw": { "language": "json" } }
             }
           },
@@ -73,7 +73,6 @@
           "name": "Session (current user)",
           "request": {
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/auth/session",
               "host": ["{{baseUrl}}"],
@@ -127,25 +126,25 @@
           "name": "Get all products",
           "request": {
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{baseUrl}}/products",
               "host": ["{{baseUrl}}"],
               "path": ["products"]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get product by slug",
           "request": {
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{baseUrl}}/products/:slug",
               "host": ["{{baseUrl}}"],
               "path": ["products", ":slug"]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update product (PATCH)",
@@ -165,7 +164,8 @@
               "raw": "{\n  \"name\": \"New Name\",\n  \"description\": \"Updated description\"\n}\n",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update SKU (PATCH)",
@@ -185,7 +185,8 @@
               "raw": "{\n  \"price\": 125000\n}\n",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update Stock (PATCH)",
@@ -205,7 +206,8 @@
               "raw": "{\n  \"stock\": 25\n}\n",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Upload Product Image (multipart)",
@@ -230,7 +232,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -252,10 +255,11 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    { \"skuId\": \"<skuId>\", \"qty\": 2 }\n  ],\n  \"shippingAddress\": {\n    \"address\": \"Jl. Contoh No. 1\",\n    \"city\": \"Bandung\",\n    \"postalCode\": \"40100\"\n  },\n  \"paymentMethod\": \"bank_transfer\"\n}\n",
+              "raw": "{\n  \"items\": [\n    { \"skuId\": \"<skuId>\", \"quantity\": 2 }\n  ],\n  \"shippingAddress\": {\n    \"address\": \"Jl. Contoh No. 1\",\n    \"city\": \"Bandung\",\n    \"postalCode\": \"40100\"\n  },\n  \"paymentMethod\": \"MANUAL_TRANSFER\"\n}\n",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get My Orders (GET)",
@@ -267,7 +271,8 @@
               "host": ["{{baseUrl}}"],
               "path": ["orders"]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get Order by ID (GET)",
@@ -279,7 +284,8 @@
               "host": ["{{baseUrl}}"],
               "path": ["orders", ":id"]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Upload Payment Proof (multipart)",
@@ -302,7 +308,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update Order Status (PATCH) - Admin",
@@ -322,7 +329,8 @@
               "raw": "{\n  \"status\": \"PAID\"\n}\n",
               "options": { "raw": { "language": "json" } }
             }
-          }
+          },
+          "response": []
         }
       ]
     }

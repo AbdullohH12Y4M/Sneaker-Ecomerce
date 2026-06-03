@@ -26,17 +26,31 @@ export const authConfig: NextAuthConfig = {
           });
 
           const data = res.data;
+          // Memastikan data sesuai dengan response asli backend: data.access_token & data.user
           if (data?.access_token && data?.user) {
             return {
               id: data.user.id,
-              name: data.user.name,
+              // Fallback karena backend tidak mengirimkan field 'name'
+              name: data.user.name || data.user.email.split('@')[0], 
               email: data.user.email,
               role: data.user.role || 'CUSTOMER',
               accessToken: data.access_token,
             };
           }
           return null;
-        } catch {
+        } catch (error: any) {
+          // === INSTRUMEN PENGUJIAN BARU ===
+          console.error('❌ [Auth-Authorize] Terjadi kegagalan saat hit API login backend:');
+          if (error.response) {
+            // Backend merespons tetapi dengan status kode di luar 2xx (e.g., 400, 401)
+            console.error('Status Code dari BE:', error.response.status);
+            console.error('Pesan Eror dari BE:', error.response.data);
+          } else if (error.request) {
+            // Request dikirim tetapi tidak ada respons sama sekali (e.g., Network timeout/Railway cold start)
+            console.error('Tidak ada respons dari backend. Periksa koneksi jaringan atau apakah server Railway mati/sleep.');
+          } else {
+            console.error('Eror konfigurasi request:', error.message);
+          }
           return null;
         }
       },
@@ -66,7 +80,7 @@ export const authConfig: NextAuthConfig = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 7 * 24 * 60 * 60, // 7 hari
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

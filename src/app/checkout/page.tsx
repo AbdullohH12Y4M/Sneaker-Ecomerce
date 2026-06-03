@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { MALANG_DISTRICTS, formatPrice } from '@/lib/utils';
+import { MALANG_DISTRICTS, formatPrice, extractErrorMessage } from '@/lib/utils';
 import { useCartStore } from '@/store/cart';
 import { ordersApi } from '@/lib/api';
 import styles from './page.module.css';
@@ -61,8 +61,7 @@ export default function CheckoutPage() {
         router.push(`/orders/${order.id}`);
       }, 2000);
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Checkout gagal. Coba lagi.';
-      setErrorMessage(message);
+      setErrorMessage(extractErrorMessage(error));
     } finally {
       setLoading(false);
     }

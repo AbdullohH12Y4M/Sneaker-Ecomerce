@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { ordersApi } from '@/lib/api';
+import { extractErrorMessage } from '@/lib/utils';
 import styles from './page.module.css';
 
 interface OrderItem {
@@ -55,7 +56,7 @@ export default function AdminPage() {
         setOrders(Array.isArray(response.data) ? response.data : response.data.items || []);
         setError('');
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Gagal mengambil data pesanan');
+        setError(extractErrorMessage(err));
         setOrders([]);
       } finally {
         setLoading(false);
@@ -75,7 +76,7 @@ export default function AdminPage() {
         )
       );
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal memperbarui status pesanan');
+      setError(extractErrorMessage(err));
     } finally {
       setUpdating(null);
     }

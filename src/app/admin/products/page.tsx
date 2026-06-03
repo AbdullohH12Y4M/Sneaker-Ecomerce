@@ -2,18 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import { productsApi } from '@/lib/api';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, extractErrorMessage } from '@/lib/utils';
 import { Product } from '@/types';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  // Basic MVP form state
+
+  // Admin form state (type=PRODUCT)
   const [isCreating, setIsCreating] = useState(false);
+  const [categoryId, setCategoryId] = useState('');
   const [newProductName, setNewProductName] = useState('');
-  const [newProductPrice, setNewProductPrice] = useState('');
+  const [slug, setSlug] = useState('');
+  const [description, setDescription] = useState('');
+  const [basePrice, setBasePrice] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [isActive, setIsActive] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   
   useEffect(() => {
     fetchProducts();
@@ -26,7 +32,7 @@ export default function AdminProductsPage() {
       setProducts(Array.isArray(response.data) ? response.data : response.data.items || []);
       setError('');
     } catch (err: any) {
-      setError('Gagal mengambil data produk');
+      setError(extractErrorMessage(err));
       setProducts([]);
     } finally {
       setLoading(false);
@@ -35,22 +41,53 @@ export default function AdminProductsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProductName || !newProductPrice) return;
-    
+
+    const cleanedSlug = (slug || newProductName)
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+
+    if (!categoryId || !newProductName || !cleanedSlug || !description || !basePrice) {
+      alert('Lengkapi field wajib: categoryId, name, slug, description, basePrice');
+      return;
+    }
+
     try {
-      const formData = new FormData();
-      formData.append('name', newProductName);
-      formData.append('basePrice', newProductPrice);
-      formData.append('category', 'SNEAKERS');
-      formData.append('description', 'Deskripsi produk ' + newProductName);
-      
-      await productsApi.create(formData);
+      const payload = {
+        type: 'PRODUCT',
+        categoryId,
+        name: newProductName,
+        slug: cleanedSlug,
+        description,
+        basePrice: Number(basePrice),
+        imageUrl: imageUrl || '',
+        isActive: Boolean(isActive),
+      };
+
+      const response = await productsApi.create(payload as any);
+      const newProductId = response?.data?.id;
+
+      // chaining: upload image if backend returns ID and user selected a file
+      if (newProductId && imageFile) {
+        await productsApi.uploadImage(newProductId, imageFile);
+      }
+
+      // reset + refresh
+      setCategoryId('');
       setNewProductName('');
-      setNewProductPrice('');
+      setSlug('');
+      setDescription('');
+      setBasePrice('');
+      setImageUrl('');
+      setIsActive(true);
+      setImageFile(null);
+
       setIsCreating(false);
       fetchProducts();
     } catch (err: any) {
-      alert('Gagal membuat produk: ' + (err.response?.data?.message || err.message));
+      alert('Gagal membuat produk: ' + extractErrorMessage(err));
     }
   };
 
@@ -70,30 +107,117 @@ export default function AdminProductsPage() {
       {error && <p className="form-error" style={{ marginBottom: '16px' }}>{error}</p>}
 
       {isCreating && (
-        <form onSubmit={handleCreate} className="card" style={{ padding: '24px', marginBottom: '24px', display: 'grid', gap: '16px' }}>
-          <h3>Tambah Produk Baru</h3>
+        <form
+          onSubmit={handleCreate}
+          className="card"
+          style={{ padding: '24px', marginBottom: '24px', display: 'grid', gap: '16px' }}
+        >
+          <h3>Tambah Produk Baru (type=PRODUCT)</h3>
+
           <div>
-            <label className="form-label">Nama Produk</label>
-            <input 
-              className="form-input" 
-              value={newProductName} 
-              onChange={(e) => setNewProductName(e.target.value)} 
+            <label className="form-label">categoryId (CUID) *</label>
+            <input
+              className="form-input"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              placeholder="Contoh: clxxxxxxxxxxxxxxxxxxxxxxxxx"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="form-label">Name *</label>
+            <input
+              className="form-input"
+              value={newProductName}
+              onChange={(e) => {
+                const v = e.target.value;
+                setNewProductName(v);
+                if (!slug) {
+                  const nextSlug = v
+                    .toLowerCase()
+                    .trim()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^a-z0-9-]/g, '');
+                  setSlug(nextSlug);
+                }
+              }}
               placeholder="Contoh: Nike Air Force 1"
-              required 
+              required
             />
           </div>
+
           <div>
-            <label className="form-label">Harga Dasar</label>
-            <input 
-              type="number" 
-              className="form-input" 
-              value={newProductPrice} 
-              onChange={(e) => setNewProductPrice(e.target.value)} 
-              placeholder="Contoh: 1500000"
-              required 
+            <label className="form-label">Slug *</label>
+            <input
+              className="form-input"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="contoh: nike-air-force-1"
+              required
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ justifySelf: 'start' }}>Simpan Produk</button>
+
+          <div>
+            <label className="form-label">Description *</label>
+            <input
+              className="form-input"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Deskripsi produk"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="form-label">basePrice (angka) *</label>
+            <input
+              type="number"
+              className="form-input"
+              value={basePrice}
+              onChange={(e) => setBasePrice(e.target.value)}
+              placeholder="Contoh: 1500000"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="form-label">imageUrl (opsional)</label>
+            <input
+              className="form-input"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="URL image (atau kosongkan)"
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <input
+              id="isActive"
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+            />
+            <label htmlFor="isActive" className="form-label" style={{ margin: 0 }}>
+              isActive
+            </label>
+          </div>
+
+          <div>
+            <label className="form-label">Upload Gambar Produk (opsional) </label>
+            <input
+              type="file"
+              className="form-input"
+              accept="image/*"
+              onChange={(e) => {
+                setImageFile(e.target.files?.[0] ?? null);
+              }}
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary" style={{ justifySelf: 'start' }}>
+            Simpan Produk
+          </button>
         </form>
       )}
 

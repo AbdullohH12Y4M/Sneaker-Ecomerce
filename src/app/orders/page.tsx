@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { ordersApi } from '@/lib/api';
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatPrice } from '@/lib/utils';
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatPrice, extractErrorMessage } from '@/lib/utils';
 import styles from './page.module.css';
 
 interface OrderItem {
@@ -54,9 +54,12 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [uploadingOrder, setUploadingOrder] = useState<string | null>(null);
+  const [noteByOrderId, setNoteByOrderId] = useState<Record<string, string>>({});
+  const IS_DEV = process.env.NODE_ENV === 'development';
 
   useEffect(() => {
     if (!session) {
+      if (IS_DEV) console.log('[OrdersPage] not logged in -> stop loading');
       setLoading((_) => false);
       return;
     }
@@ -64,15 +67,19 @@ export default function OrdersPage() {
 
     const fetchOrders = async () => {
       try {
+        if (IS_DEV) console.log('[OrdersPage] fetching orders...');
         setLoading(true);
         const response = await ordersApi.getMyOrders();
         setOrders(Array.isArray(response.data) ? response.data : response.data.items || []);
         setError('');
+        if (IS_DEV) console.log('[OrdersPage] fetch orders success', response.data);
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Gagal mengambil data pesanan');
+        setError(extractErrorMessage(err));
         setOrders([]);
+        if (IS_DEV) console.error('[OrdersPage] fetch orders failed', err);
       } finally {
         setLoading(false);
+        if (IS_DEV) console.log('[OrdersPage] fetch orders finally -> setLoading(false)');
       }
     };
 
@@ -80,16 +87,25 @@ export default function OrdersPage() {
   }, [session]);
 
   const handleUpload = async (orderId: string, file: File) => {
+    const note = noteByOrderId[orderId] || undefined;
+
+    if (IS_DEV) console.log('[OrdersPage] uploadProof start', { orderId, noteProvided: !!note, fileName: file?.name });
+
     setUploadingOrder(orderId);
     try {
-      await ordersApi.uploadProof(orderId, file);
+      await ordersApi.uploadProof(orderId, file, note);
+
       // Refresh orders after successful upload
       const response = await ordersApi.getMyOrders();
       setOrders(Array.isArray(response.data) ? response.data : response.data.items || []);
+      setError('');
+      if (IS_DEV) console.log('[OrdersPage] uploadProof success', response.data);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Gagal mengunggah bukti pembayaran');
+      setError(extractErrorMessage(err));
+      if (IS_DEV) console.error('[OrdersPage] uploadProof failed', err);
     } finally {
       setUploadingOrder(null);
+      if (IS_DEV) console.log('[OrdersPage] uploadProof finally -> setUploadingOrder(null)');
     }
   };
 
@@ -184,19 +200,43 @@ export default function OrdersPage() {
                       </a>
                     </div>
                   ) : (
-                    <label className="btn btn-primary btn-sm" htmlFor={`proof-${order.id}`}>
-                      {uploadingOrder === order.id ? 'Mengunggah...' : 'Unggah Bukti Transfer'}
-                      <input
-                        id={`proof-${order.id}`}
-                        type="file"
-                        accept="image/*"
-                        hidden
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) handleUpload(order.id, file);
-                        }}
-                      />
-                    </label>
+                    <>
+                      <label className="btn btn-primary btn-sm" htmlFor={`proof-${order.id}`}>
+                        {uploadingOrder === order.id ? 'Mengunggah...' : 'Unggah Bukti Transfer'}
+                        <input
+                          id={`proof-${order.id}`}
+                          type="file"
+                          accept="image/*"
+                          hidden
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) handleUpload(order.id, file);
+                          }}
+                        />
+                      </label>
+
+                      <div style={{ marginTop: 10 }}>
+                        <label
+                          className="form-label"
+                          htmlFor={`note-${order.id}`}
+                        >
+                          Catatan Tambahan (Opsional)
+                        </label>
+                        <textarea
+                          id={`note-${order.id}`}
+                          className="form-textarea form-input"
+                          rows={2}
+                          value={noteByOrderId[order.id] ?? ''}
+                          onChange={(e) =>
+                            setNoteByOrderId((prev) => ({
+                              ...prev,
+                              [order.id]: e.target.value,
+                            }))
+                          }
+                          placeholder="Transfer via BCA a/n Budi"
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
               )}

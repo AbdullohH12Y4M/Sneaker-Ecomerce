@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { authApi } from '@/lib/api';
+import { authApi } from '@/lib/api'; // Mengacu pada berkas api.ts kamu
+import { extractErrorMessage } from '@/lib/utils';
 import styles from './page.module.css';
 
 export default function LoginPage() {
@@ -12,17 +13,18 @@ export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Jika session ada, tampilkan pesan selamat datang
   if (session) {
     return (
       <div className="container" style={{ padding: '40px 0' }}>
         <div className={styles.loggedIn}>
+          {/* Menggunakan session.user.name (yang sudah difallback ke email di auth.ts) */}
           <h1>Selamat datang, {session.user?.name}</h1>
           <p>Anda sudah masuk. Lanjutkan belanja atau lihat riwayat pesanan Anda.</p>
           <div className={styles.loggedInActions}>
@@ -37,6 +39,8 @@ export default function LoginPage() {
   const handleCredentialsSignIn = async () => {
     setLoading(true);
     setMessage('');
+    
+    // 1. Proses autentikasi melalui NextAuth Credentials provider
     const result = await signIn('credentials', {
       redirect: false,
       email,
@@ -46,14 +50,14 @@ export default function LoginPage() {
     if (result?.error) {
       setMessage('Email atau password salah.');
     } else if (result?.ok) {
-      // Store token in localStorage if provided
+      // 2. Ambil token langsung dari backend untuk disimpan di localStorage (untuk kebutuhan Axios Interceptor)
       try {
         const loginRes = await authApi.login({ email, password });
         if (loginRes.data?.access_token) {
           localStorage.setItem('access_token', loginRes.data.access_token);
         }
       } catch {
-        // Token should be handled by NextAuth session
+        // Fallback aman jika penyimpanan localStorage menemui kendala
       }
       router.push('/');
     }
@@ -63,6 +67,7 @@ export default function LoginPage() {
   const handleRegister = async () => {
     setLoading(true);
     setMessage('');
+    
     if (password !== confirmPassword) {
       setMessage('Password dan konfirmasi tidak cocok.');
       setLoading(false);
@@ -73,11 +78,14 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
+    
     try {
-      const response = await authApi.register({ name, email, password });
-      if (response?.data?.success || response?.status === 201) {
+      // PERBAIKAN: Menggunakan 'registerCustomer' sesuai dengan isi lib/api.ts
+      // Menghapus properti 'name' karena tidak didukung oleh skema backend
+      const response = await authApi.registerCustomer({ email, password });
+      
+      if (response?.status === 201 || response?.data?.user) {
         setMessage('Akun berhasil dibuat. Silakan login.');
-        setName('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
@@ -86,8 +94,7 @@ export default function LoginPage() {
         setMessage(response?.data?.message || 'Registrasi gagal. Coba lagi.');
       }
     } catch (error: any) {
-      const errorMsg = error.response?.data?.message || 'Tidak dapat terhubung ke server pendaftaran.';
-      setMessage(errorMsg);
+      setMessage(extractErrorMessage(error));
     }
     setLoading(false);
   };
@@ -95,15 +102,6 @@ export default function LoginPage() {
   return (
     <div className="container" style={{ padding: '40px 0' }}>
       <div className={styles.loginGrid}>
-        {/* <div className={styles.introCard}>
-          <h1>{isRegister ? 'Daftar Akun Baru' : 'Masuk ke SneakerLocal'}</h1>
-          <p>Login cepat dengan email & password, atau gunakan Google untuk akses cepat.</p>
-          <button className="btn btn-secondary btn-full" type="button" onClick={() => signIn('google')}>
-            Masuk dengan Google
-          </button>
-          <p className="text-muted">Akun Google akan tersinkron dengan role CUSTOMER secara otomatis.</p>
-        </div> */}
-
         <div className={styles.formCard}>
           <div className={styles.toggleRow}>
             <button
@@ -128,19 +126,7 @@ export default function LoginPage() {
               isRegister ? handleRegister() : handleCredentialsSignIn();
             }}
           >
-            {isRegister && (
-              <div className={styles.fieldGroup}>
-                <label className="form-label" htmlFor="name">Nama Lengkap</label>
-                <input
-                  id="name"
-                  className="form-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Nama kamu"
-                  required={isRegister}
-                />
-              </div>
-            )}
+            {/* Input Nama Lengkap ditiadakan karena backend registrasi tidak menyimpannya */}
 
             <div className={styles.fieldGroup}>
               <label className="form-label" htmlFor="email">Email</label>
@@ -150,7 +136,7 @@ export default function LoginPage() {
                 className="form-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@kampus.ac.id"
+                placeholder="user@example.com"
                 required
               />
             </div>
@@ -186,8 +172,8 @@ export default function LoginPage() {
               </div>
               {isRegister && password.length > 0 && (
                 <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
-                  <div style={{ height: '4px', flex: 1, borderRadius: '2px', background: password.length > 0 ? (password.length >= 6 ? 'var(--color-success)' : 'var(--color-danger)') : 'var(--color-surface-3)' }} />
-                  <div style={{ height: '4px', flex: 1, borderRadius: '2px', background: password.length >= 6 ? (password.match(/[0-9]/) || password.match(/[^a-zA-Z0-9]/) ? 'var(--color-success)' : 'var(--color-warning)') : 'var(--color-surface-3)' }} />
+                  <div style={{ height: '4px', flex: 1, borderRadius: '2px', background: password.length >= 6 ? 'var(--color-success)' : 'var(--color-danger)' }} />
+                  <div style={{ height: '4px', flex: 1, borderRadius: '2px', background: password.length >= 6 && (password.match(/[0-9]/) || password.match(/[^a-zA-Z0-9]/)) ? 'var(--color-success)' : 'var(--color-surface-3)' }} />
                   <div style={{ height: '4px', flex: 1, borderRadius: '2px', background: password.length >= 8 && password.match(/[0-9]/) && password.match(/[^a-zA-Z0-9]/) ? 'var(--color-success)' : 'var(--color-surface-3)' }} />
                 </div>
               )}

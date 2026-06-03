@@ -68,3 +68,17 @@ export const MALANG_DISTRICTS = [
   { id: 'KEDUNGKANDANG', name: 'Kedungkandang' },
 ];
 
+export function extractErrorMessage(error: any): string {
+  if (!error) return 'Terjadi kesalahan. Coba lagi.';
+  
+  if (error.response?.data?.message) {
+    const msg = error.response.data.message;
+    if (Array.isArray(msg)) {
+      return msg.join(', ');
+    }
+    return msg;
+  }
+  
+  return error.message || 'Terjadi kesalahan. Coba lagi.';
+}
+
