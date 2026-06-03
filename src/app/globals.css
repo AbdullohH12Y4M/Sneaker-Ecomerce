@@ -2,32 +2,37 @@
 
 /* ─── CSS Variables ─────────────────────────────────────────────────────── */
 :root {
-  /* Colors */
-  --color-bg: #110d0c; /* Deep warm charcoal */
-  --color-bg-2: #1c1514; 
-  --color-bg-3: #2a1e1c;
-  --color-surface: #1e1615;
-  --color-surface-2: #2b1f1d;
-  --color-surface-3: #3d2c29;
+  /* Colors (Light theme) */
+  /* Primary: white / warm-off-white */
+  --color-bg: #fffaf3; /* warm almost-white */
+  --color-bg-2: #fff3e6; /* warm amber tint */
+  --color-bg-3: #ffe8cf;
 
-  --color-border: rgba(255, 255, 255, 0.12);
-  --color-border-hover: rgba(255, 255, 255, 0.25);
+  /* Surfaces */
+  --color-surface: #ffffff;
+  --color-surface-2: #fff7ee;
+  --color-surface-3: #ffeedd;
 
-  /* Brand (Warm Ember palette) */
-  --color-primary: #ffffff; /* pure white for primary elements */
-  --color-primary-hover: #e0e0e0;
-  --color-primary-dim: rgba(255, 255, 255, 0.15);
-  --color-primary-glow: rgba(255, 255, 255, 0.25);
+  /* Borders */
+  --color-border: rgba(120, 53, 15, 0.14);
+  --color-border-hover: rgba(120, 53, 15, 0.26);
 
-  --color-accent: #ff6b35; /* vibrant ember orange */
-  --color-accent-hover: #ff8c42;
-  --color-accent-dim: rgba(255, 107, 53, 0.15);
-  --color-accent-glow: rgba(255, 107, 53, 0.3);
+  /* Brand (Warm Amber palette) */
+  --color-primary: #ffffff;
+  --color-primary-hover: #f6f6f6;
+  --color-primary-dim: rgba(255, 255, 255, 0.65);
+  --color-primary-glow: rgba(255, 183, 77, 0.28);
+
+  --color-accent: #f59e0b; /* warm amber */
+  --color-accent-hover: #d97706;
+  --color-accent-dim: rgba(245, 158, 11, 0.16);
+  --color-accent-glow: rgba(245, 158, 11, 0.32);
 
   /* Text */
-  --color-text: #ffffff; /* White text for primary contrast */
-  --color-text-muted: #d1c8c5;
-  --color-text-faint: #9c918f;
+  --color-text: #1f140b; /* warm charcoal */
+  --color-text-muted: rgba(31, 20, 11, 0.72);
+  --color-text-faint: rgba(31, 20, 11, 0.48);
+
 
   /* Status */
   --color-success: #22c55e;
@@ -90,6 +95,7 @@ body {
   overflow-x: hidden;
 }
 
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   font-weight: 700;
@@ -133,8 +139,9 @@ input, textarea, select {
 /* ─── Scrollbar ─────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--color-bg-2); }
-::-webkit-scrollbar-thumb { background: var(--color-surface-3); border-radius: var(--radius-full); }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-faint); }
+::-webkit-scrollbar-thumb { background: rgba(120, 53, 15, 0.18); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: rgba(120, 53, 15, 0.28); }
+
 
 /* ─── Buttons ───────────────────────────────────────────────────────────── */
 .btn {
@@ -163,14 +170,19 @@ input, textarea, select {
 
 .btn-primary {
   background: var(--color-primary);
-  color: #110d0c; /* Black text on white button */
-  box-shadow: 0 4px 14px var(--color-primary-glow);
+  color: #1f140b; /* Warm charcoal for contrast on white */
+  box-shadow: 0 6px 18px var(--color-primary-glow);
 }
+
+
 .btn-primary:hover {
-  background: var(--color-primary-hover);
-  box-shadow: 0 6px 20px var(--color-primary-glow);
+  background: var(--color-accent-hover);
+  color: #fff;
+  box-shadow: 0 6px 20px var(--color-accent-glow);
   transform: translateY(-1px);
 }
+
+
 .btn-primary:active { transform: translateY(0); }
 
 .btn-secondary {
@@ -178,6 +190,7 @@ input, textarea, select {
   color: var(--color-text);
   border: 1px solid var(--color-border);
 }
+
 .btn-secondary:hover {
   background: var(--color-surface-3);
   border-color: var(--color-border-hover);
@@ -298,11 +311,12 @@ input, textarea, select {
 
 /* ─── Glass ─────────────────────────────────────────────────────────────── */
 .glass {
-  background: rgba(22, 22, 31, 0.7);
+  background: rgba(255, 250, 243, 0.65);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--color-border);
 }
+
 
 /* ─── Divider ───────────────────────────────────────────────────────────── */
 .divider {
@@ -443,8 +457,10 @@ input, textarea, select {
 .price {
   font-family: var(--font-heading);
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-text);
 }
+
+
 .price-lg { font-size: 1.5rem; }
 .price-xl { font-size: 2rem; }
 
