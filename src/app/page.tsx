@@ -12,10 +12,10 @@ export default function HomePage() {
   const router = useRouter();
   const params = useSearchParams();
 
-  // 1. Ambil state dinamis, loading, error, dan action fetch dari Zustand store baru
+  // Memanggil state global dari toko Zustand
   const { products, isLoading, error, fetchProducts } = useShopStore();
 
-  // Menangkap parameter filter aktif yang ada di URL browser
+  // Menangkap parameter aktif di URL browser
   const category = params.get('category') ?? '';
   const color = params.get('color') ?? '';
   const size = params.get('size') ?? '';
@@ -23,24 +23,20 @@ export default function HomePage() {
   const maxPrice = params.get('maxPrice') ?? '';
   const search = params.get('search') ?? '';
 
-  // State lokal khusus untuk mengendalikan input ketikan di kolom pencarian Hero
   const [searchInput, setSearchInput] = useState(search);
 
-  // Sinkronisasi kolom input jika parameter search di URL berubah dari luar
   useEffect(() => {
     setSearchInput(search);
   }, [search]);
 
-  // 2. PROSES FETCH BACKEND (SERVER-SIDE FILTERING):
-  // Setiap kali salah satu filter di URL berubah (di-klik user), useEffect ini
-  // otomatis mendeteksi lalu menembak API backend via Zustand action.
+  // Melakukan fetch ulang setiap kali ada parameter filter baru yang diklik di sidebar
   useEffect(() => {
     const filters = {
       category,
       color,
-      size: size ? Number(size) : undefined,
-      minPrice: minPrice ? Number(minPrice) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      size,
+      minPrice,
+      maxPrice,
       search,
     };
 
@@ -84,8 +80,8 @@ export default function HomePage() {
             <Link href="/cart" className="btn btn-primary btn-lg">
               Buka Keranjang
             </Link>
-            <Link href="/?category=SNEAKERS" className="btn btn-secondary btn-lg">
-              Lihat Sneakers
+            <Link href="/?category=sandal" className="btn btn-secondary btn-lg">
+              Lihat Sandal
             </Link>
           </div>
         </div>
@@ -104,7 +100,7 @@ export default function HomePage() {
             <h2 className={styles.sectionTitle}>Temukan sepatu sesuai kantong mahasiswa</h2>
           </div>
           <p className={styles.sectionMeta}>
-            Menampilkan <strong>{isLoading ? '...' : products.length}</strong> produk dengan stok tersedia.
+            Menampilkan <strong>{isLoading ? '...' : products.length}</strong> produk aktif.
           </p>
         </div>
 
@@ -113,10 +109,9 @@ export default function HomePage() {
             <FilterSidebar />
           </div>
           <div className={styles.productGrid}>
-            {/* 3. CONDITIONAL RENDERING VISUAL STATUS */}
             {isLoading ? (
               <div className={styles.emptyState}>
-                <p className="text-muted">Sedang memuat katalog langsung dari server...</p>
+                <p className="text-muted">Menghubungkan ke server https://sneakerlocal.up.railway.app...</p>
               </div>
             ) : error ? (
               <div className={styles.emptyState}>
@@ -128,7 +123,7 @@ export default function HomePage() {
               ))
             ) : (
               <div className={styles.emptyState}>
-                <p className="text-muted">Tidak ada produk sesuai filter. Coba ubah kategori, warna, atau ukuran.</p>
+                <p className="text-muted">Tidak ada produk aktif yang sesuai kriteria filter Anda.</p>
               </div>
             )}
           </div>
