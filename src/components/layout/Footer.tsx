@@ -46,11 +46,11 @@ export default function Footer() {
           <div>
             <h4 className={styles.colTitle}>Informasi</h4>
             <ul className={styles.linkList}>
-              <li><Link href="/tentang" className={styles.link}>Tentang Kami</Link></li>
-              <li><Link href="/cara-beli" className={styles.link}>Cara Beli</Link></li>
-              <li><Link href="/pengiriman" className={styles.link}>Info Pengiriman</Link></li>
-              <li><Link href="/return" className={styles.link}>Return & Garansi</Link></li>
-              <li><Link href="/faq" className={styles.link}>FAQ</Link></li>
+              <li><Link href="/info/tentang" className={styles.link}>Tentang Kami</Link></li>
+              <li><Link href="/info/cara-beli" className={styles.link}>Cara Beli</Link></li>
+              <li><Link href="/info/pengiriman" className={styles.link}>Info Pengiriman</Link></li>
+              <li><Link href="/info/return" className={styles.link}>Return & Garansi</Link></li>
+              <li><Link href="/info/faq" className={styles.link}>FAQ</Link></li>
             </ul>
           </div>
 
@@ -93,8 +93,8 @@ export default function Footer() {
             © {new Date().getFullYear()} SneakerLocal. Dibuat dengan ❤️ di Malang.
           </p>
           <div className={styles.bottomLinks}>
-            <Link href="/privasi" className={styles.bottomLink}>Kebijakan Privasi</Link>
-            <Link href="/syarat" className={styles.bottomLink}>Syarat & Ketentuan</Link>
+            <Link href="/info/privasi" className={styles.bottomLink}>Kebijakan Privasi</Link>
+            <Link href="/info/syarat" className={styles.bottomLink}>Syarat & Ketentuan</Link>
           </div>
         </div>
       </div>

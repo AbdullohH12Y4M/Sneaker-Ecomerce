@@ -49,9 +49,9 @@ export const productsApi = {
   getAll: (params?: Record<string, unknown>) =>
     api.get('/products/all', { params }),
 
-  // Documentation public endpoint (backend: /all)
-  // Mengambil semua produk dan kategori aktif tanpa filter.
-  getAllPublic: () => api.get('/all'),
+  // Documentation public endpoint (backend: GET /products/all)
+  // Mengambil semua produk aktif dan kategori aktif tanpa filter.
+  getAllPublic: () => api.get('/products/all'),
 
   getBySlug: (slug: string) =>
     api.get(`/products/${slug}`),

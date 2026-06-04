@@ -14,8 +14,6 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const q = Object.fromEntries(url.searchParams.entries()) as FilterQuery;
 
-  // Mapping query param ke backend filter DTO (backend controller: GET /products)
-  // Catatan: struktur DTO belum kita baca. Ini disiapkan agar kamu tinggal menyesuaikan nama field jika berbeda.
   const params: Record<string, any> = {};
 
   if (q.category) params.category = q.category;
@@ -32,4 +30,3 @@ export async function GET(req: Request) {
     return NextResponse.json({ message: e?.message ?? 'Failed to fetch filtered products' }, { status: 500 });
   }
 }
-
