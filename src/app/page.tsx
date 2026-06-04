@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import FilterSidebar from '@/components/shop/FilterSidebar';
@@ -8,12 +9,20 @@ import ProductCard from '@/components/shop/ProductCard';
 import { mockProducts } from '@/data/mockProducts';
 import styles from './page.module.css';
 
-export default function HomePage() {
+function HomeContent() {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFromMock, setIsFromMock] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const params = useSearchParams();
+  const category = params.get('category') ?? '';
+  const color = params.get('color') ?? '';
+  const size = Number(params.get('size') ?? '0');
+  const minPrice = Number(params.get('minPrice') ?? '0');
+  const maxPrice = Number(params.get('maxPrice') ?? '0');
+  const search = params.get('search')?.toLowerCase() ?? '';
 
   useEffect(() => {
     let mounted = true;
@@ -75,13 +84,26 @@ export default function HomePage() {
   }, []);
 
   const displayProducts = useMemo(() => {
-    if (isFromMock) return products;
-    const available = products.filter((product: any) => {
+    return products.filter((product: any) => {
       const availableSkus = (product.skus || []).filter((sku: any) => sku.stock > 0);
-      return availableSkus.length > 0;
+      if (!availableSkus.length) return false;
+
+      if (category && product.category !== category) return false;
+
+      if (search) {
+        const name = String(product.name ?? '').toLowerCase();
+        const desc = String(product.description ?? '').toLowerCase();
+        if (![name, desc].some((field) => field.includes(search))) return false;
+      }
+
+      if (color && !availableSkus.some((sku: any) => String(sku.color ?? '').toLowerCase() === color.toLowerCase())) return false;
+      if (size && !availableSkus.some((sku: any) => sku.size === size)) return false;
+      if (minPrice && !availableSkus.some((sku: any) => (sku.price ?? product.basePrice) >= minPrice)) return false;
+      if (maxPrice && maxPrice > 0 && !availableSkus.some((sku: any) => (sku.price ?? product.basePrice) <= maxPrice)) return false;
+
+      return true;
     });
-    return available;
-  }, [products, isFromMock]);
+  }, [products, category, color, size, minPrice, maxPrice, search]);
 
   return (
     <div className={styles.heroPage}>
@@ -160,5 +182,13 @@ export default function HomePage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="container" style={{ padding: '40px 0' }}><p className="text-muted">Memuat...</p></div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
