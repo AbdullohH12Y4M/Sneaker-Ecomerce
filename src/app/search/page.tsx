@@ -49,14 +49,18 @@ export default function SearchPage() {
 
         const normalized = (items as any[]).map((product: any) => ({
           ...product,
-          images: product.imageUrl ? [product.imageUrl] : product.images || ['/placeholder-shoes.png'],
-          category: product.category?.name || product.category || 'Uncategorized',
+          images: product.images && product.images.length > 0 ? product.images : ['/placeholder-shoes.png'],
+          category: typeof product.category === 'object' && product.category !== null
+            ? (product.category.name ?? product.category.slug ?? 'Uncategorized')
+            : (product.category || 'Uncategorized'),
           _mock: false,
         }));
 
         const categoriesNormalized =
           serverCategories.length
-            ? serverCategories.map((c: any) => c?.name ?? c?.slug).filter(Boolean)
+            ? serverCategories.map((c: any) =>
+                typeof c === 'string' ? c : (c?.name ?? c?.slug ?? null)
+              ).filter(Boolean)
             : Array.from(new Set(normalized.map((p: any) => p.category).filter(Boolean)));
 
         const uniqueCategories = Array.from(new Set(categoriesNormalized));
@@ -70,11 +74,11 @@ export default function SearchPage() {
 
         const mockWithFilter = mockProducts.map((p) => ({
           ...p,
-          images: p.imageUrl ? [p.imageUrl] : p.images || ['/placeholder-shoes.png'],
-          category: p.category?.name || p.category || 'Uncategorized',
+          images: p.images && p.images.length > 0 ? p.images : ['/placeholder-shoes.png'],
+          category: (typeof p.category === 'string' ? p.category : (p.category as any)?.name ?? (p.category as any)?.slug) || 'Uncategorized',
           _mock: true,
         }));
-
+// 
         const filteredMock = mockWithFilter.filter((product: any) => {
           const availableSkus = (product.skus || []).filter((sku: any) => sku.stock > 0);
           if (!availableSkus.length) return false;

@@ -38,7 +38,7 @@ export const useShopStore = create<ShopState>((set, get) => ({
 
       const normalizedProducts = (productsFromApi as any[]).map((product: any) => ({
         ...product,
-        images: product.imageUrl ? [product.imageUrl] : product.images || ['/placeholder-shoes.png'],
+        images: product.images && product.images.length > 0 ? product.images : ['/placeholder-shoes.png'],
         category: product.category?.name || product.category || 'Uncategorized',
       }));
 

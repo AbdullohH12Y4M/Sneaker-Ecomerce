@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import styles from './FilterSidebar.module.css';
@@ -32,6 +32,7 @@ const PRICE_RANGES = [
 
 export default function FilterSidebar({ categories }: FilterSidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const params = useSearchParams();
 
   const updateParam = useCallback(
@@ -43,9 +44,9 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
         next.set(key, value);
       }
       next.delete('page');
-      router.push(`/?${next.toString()}`, { scroll: false });
+      router.push(`${pathname}?${next.toString()}`, { scroll: false });
     },
-    [router, params]
+    [router, params, pathname]
   );
 
   const activeCategory = params.get('category') || '';
@@ -56,7 +57,7 @@ export default function FilterSidebar({ categories }: FilterSidebarProps) {
   const hasFilters = !!(activeCategory || activeColor || activeSize || activeMin || activeMax);
 
   const clearAll = () => {
-    router.push('/', { scroll: false });
+    router.push(pathname, { scroll: false });
   };
 
   return (

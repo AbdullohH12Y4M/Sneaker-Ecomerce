@@ -41,7 +41,7 @@ export default function CategoryDetailPage() {
       const items = Array.isArray(data) ? (data as Product[]) : Array.isArray((data as any)?.items) ? (data as any).items : Array.isArray((data as any)?.products) ? (data as any).products : [];
       const normalized = (items as Product[]).map((p: any) => ({
         ...p,
-        images: p.imageUrl ? [p.imageUrl] : p.images || ['/placeholder-shoes.png'],
+        images: p.images && p.images.length > 0 ? p.images : ['/placeholder-shoes.png'],
       }));
       setProducts(normalized);
       setError('');
