@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import api from '@/lib/api';
+import { productsApi } from '@/lib/api';
+import { parseProductsList } from '@/lib/api-helpers';
 import FilterSidebar from '@/components/shop/FilterSidebar';
 import ProductCard from '@/components/shop/ProductCard';
 import { mockProducts } from '@/data/mockProducts';
@@ -33,16 +34,14 @@ function HomeContent() {
       setIsFromMock(false);
 
       try {
-        const response = await api.get('/products', { params: { limit: 20 } });
-        const productsFromApi = response.data?.products ?? response.data?.items ?? response.data?.itemsList ?? response.data ?? [];
-        const categoriesFromApi = response.data?.categories ?? [];
+        const response = await productsApi.getAll({ limit: 20 });
+        const categoriesFromApi =
+          response.data && typeof response.data === 'object' && !Array.isArray(response.data)
+            ? (response.data as { categories?: unknown[] }).categories ?? []
+            : [];
 
-        const normalizedProducts = (productsFromApi as any[]).map((product: any) => ({
-          ...product,
-          images: product.images && product.images.length > 0 ? product.images : ['/placeholder-shoes.png'],
-          category: typeof product.category === 'object' && product.category !== null
-            ? (product.category.name ?? product.category.slug ?? 'Uncategorized')
-            : (product.category || 'Uncategorized'),
+        const normalizedProducts = parseProductsList(response.data).map((p) => ({
+          ...p,
           _mock: false,
         }));
 
@@ -88,7 +87,9 @@ function HomeContent() {
       const availableSkus = (product.skus || []).filter((sku: any) => sku.stock > 0);
       if (!availableSkus.length) return false;
 
-      if (category && product.category !== category) return false;
+      if (category && String(product.category ?? '').toUpperCase() !== category.toUpperCase()) {
+        return false;
+      }
 
       if (search) {
         const name = String(product.name ?? '').toLowerCase();

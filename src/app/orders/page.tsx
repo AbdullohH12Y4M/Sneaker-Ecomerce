@@ -1,52 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { ordersApi } from '@/lib/api';
+import { downloadOrderReceipt, parseOrdersList } from '@/lib/api-helpers';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatPrice, extractErrorMessage } from '@/lib/utils';
+import type { Order, OrderItem } from '@/types';
 import styles from './page.module.css';
-
-interface OrderItem {
-  id: string;
-  orderId: string;
-  skuId: string;
-  quantity: number;
-  priceAtPurchase: number;
-  sku: {
-    id: string;
-    productId: string;
-    color: string;
-    size: string;
-    price: number;
-    product: {
-      id: string;
-      name: string;
-      slug: string;
-      basePrice: number;
-      description: string;
-      category: string;
-      images: string[];
-      createdAt: string;
-      updatedAt: string;
-    };
-  };
-}
-
-interface Order {
-  id: string;
-  userId: string;
-  status: string;
-  shippingType: string;
-  district?: string;
-  shippingAddress?: string;
-  shippingFee?: number;
-  paymentProofUrl?: string;
-  paymentExpiresAt?: string;
-  items: OrderItem[];
-  totalPrice: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export default function OrdersPage() {
   const { data: session } = useSession();
@@ -55,57 +16,43 @@ export default function OrdersPage() {
   const [error, setError] = useState('');
   const [uploadingOrder, setUploadingOrder] = useState<string | null>(null);
   const [noteByOrderId, setNoteByOrderId] = useState<Record<string, string>>({});
-  const IS_DEV = process.env.NODE_ENV === 'development';
+
+  const loadOrders = async () => {
+    const response = await ordersApi.getMyOrders();
+    setOrders(parseOrdersList(response.data));
+  };
 
   useEffect(() => {
     if (!session) {
-      if (IS_DEV) console.log('[OrdersPage] not logged in -> stop loading');
-      setLoading((_) => false);
+      setLoading(false);
       return;
     }
 
-
-    const fetchOrders = async () => {
+    (async () => {
       try {
-        if (IS_DEV) console.log('[OrdersPage] fetching orders...');
         setLoading(true);
-        const response = await ordersApi.getMyOrders();
-        setOrders(Array.isArray(response.data) ? response.data : response.data.items || []);
+        await loadOrders();
         setError('');
-        if (IS_DEV) console.log('[OrdersPage] fetch orders success', response.data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(extractErrorMessage(err));
         setOrders([]);
-        if (IS_DEV) console.error('[OrdersPage] fetch orders failed', err);
       } finally {
         setLoading(false);
-        if (IS_DEV) console.log('[OrdersPage] fetch orders finally -> setLoading(false)');
       }
-    };
-
-    fetchOrders();
+    })();
   }, [session]);
 
   const handleUpload = async (orderId: string, file: File) => {
     const note = noteByOrderId[orderId] || undefined;
-
-    if (IS_DEV) console.log('[OrdersPage] uploadProof start', { orderId, noteProvided: !!note, fileName: file?.name });
-
     setUploadingOrder(orderId);
     try {
       await ordersApi.uploadProof(orderId, file, note);
-
-      // Refresh orders after successful upload
-      const response = await ordersApi.getMyOrders();
-      setOrders(Array.isArray(response.data) ? response.data : response.data.items || []);
+      await loadOrders();
       setError('');
-      if (IS_DEV) console.log('[OrdersPage] uploadProof success', response.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(extractErrorMessage(err));
-      if (IS_DEV) console.error('[OrdersPage] uploadProof failed', err);
     } finally {
       setUploadingOrder(null);
-      if (IS_DEV) console.log('[OrdersPage] uploadProof finally -> setUploadingOrder(null)');
     }
   };
 
@@ -114,6 +61,9 @@ export default function OrdersPage() {
       <div className="container" style={{ padding: '40px 0' }}>
         <div className={styles.emptyState}>
           <p>Silakan login untuk melihat pesanan Anda.</p>
+          <Link href="/login" className="btn btn-primary btn-sm" style={{ marginTop: 12 }}>
+            Masuk
+          </Link>
         </div>
       </div>
     );
@@ -132,7 +82,7 @@ export default function OrdersPage() {
         <div className={styles.emptyState}>
           <p>Memuat pesanan...</p>
         </div>
-      ) : error ? (
+      ) : error && orders.length === 0 ? (
         <div className={styles.emptyState}>
           <p className="form-error">{error}</p>
         </div>
@@ -143,6 +93,7 @@ export default function OrdersPage() {
         </div>
       ) : (
         <div className={styles.orderList}>
+          {error && <p className="form-error" style={{ marginBottom: 16 }}>{error}</p>}
           {orders.map((order) => (
             <section className="card" key={order.id} style={{ padding: '24px' }}>
               <div className={styles.orderHeader}>
@@ -162,7 +113,9 @@ export default function OrdersPage() {
                 </div>
                 <div>
                   <p className="font-medium">Lokasi</p>
-                  <p className="text-muted">{order.shippingAddress || order.district || 'Pengambilan'}</p>
+                  <p className="text-muted">
+                    {order.shippingAddress || order.shippingDistrict || 'Pengambilan'}
+                  </p>
                 </div>
                 <div>
                   <p className="font-medium">Total</p>
@@ -179,23 +132,30 @@ export default function OrdersPage() {
                 <span>Jumlah</span>
                 <span>Subtotal</span>
               </div>
-              {order.items.map((item) => (
+              {order.items.map((item: OrderItem) => (
                 <div className={styles.orderItem} key={item.id}>
                   <div>
-                    <p className="font-medium">{item.sku.product.name}</p>
-                    <p className="text-muted">{item.sku.color} • EU {item.sku.size}</p>
+                    <p className="font-medium">{item.sku?.product?.name ?? 'Produk'}</p>
+                    <p className="text-muted">
+                      {item.sku?.color} • EU {item.sku?.size}
+                    </p>
                   </div>
                   <span>{item.quantity}</span>
                   <span>{formatPrice(item.priceAtPurchase * item.quantity)}</span>
                 </div>
               ))}
 
-              {(order.status === 'PENDING' || order.status === 'WAITING_CONFIRMATION') && (
+              {order.status === 'PENDING' && (
                 <div className={styles.paymentBox}>
                   {order.paymentProofUrl ? (
                     <div>
                       <p className="font-medium">Bukti Transfer</p>
-                      <a href={order.paymentProofUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
+                      <a
+                        href={order.paymentProofUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-secondary btn-sm"
+                      >
                         Lihat Bukti
                       </a>
                     </div>
@@ -216,10 +176,7 @@ export default function OrdersPage() {
                       </label>
 
                       <div style={{ marginTop: 10 }}>
-                        <label
-                          className="form-label"
-                          htmlFor={`note-${order.id}`}
-                        >
+                        <label className="form-label" htmlFor={`note-${order.id}`}>
                           Catatan Tambahan (Opsional)
                         </label>
                         <textarea
@@ -242,12 +199,15 @@ export default function OrdersPage() {
               )}
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
+                <Link href={`/orders/${order.id}`} className="btn btn-ghost btn-sm">
+                  Detail Pesanan
+                </Link>
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
                   onClick={async () => {
                     try {
-                      await ordersApi.downloadReceipt(order.id);
+                      await downloadOrderReceipt(order.id);
                     } catch {
                       alert('Gagal mengunduh struk.');
                     }
@@ -255,21 +215,23 @@ export default function OrdersPage() {
                 >
                   Download Struk
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={async () => {
-                    if (!confirm(`Hapus pesanan #${order.id}?`)) return;
-                    try {
-                      await ordersApi.deleteOrder(order.id);
-                      setOrders((prev) => prev.filter((o) => o.id !== order.id));
-                    } catch {
-                      alert('Gagal menghapus pesanan.');
-                    }
-                  }}
-                >
-                  Hapus Pesanan
-                </button>
+                {order.status === 'PENDING' && (
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={async () => {
+                      if (!confirm(`Batalkan pesanan #${order.id}?`)) return;
+                      try {
+                        await ordersApi.deleteOrder(order.id);
+                        setOrders((prev) => prev.filter((o) => o.id !== order.id));
+                      } catch {
+                        alert('Gagal membatalkan pesanan.');
+                      }
+                    }}
+                  >
+                    Batalkan Pesanan
+                  </button>
+                )}
               </div>
             </section>
           ))}

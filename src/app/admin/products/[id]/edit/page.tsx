@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { productsApi, categoriesApi } from '@/lib/api';
+import { fetchAdminProductsWithSkus } from '@/lib/api-helpers';
 import { formatPrice, extractErrorMessage } from '@/lib/utils';
 import type { Product, ProductSKU, Category } from '@/types';
 import styles from './page.module.css';
@@ -17,6 +18,8 @@ export default function AdminProductEditPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -31,12 +34,11 @@ export default function AdminProductEditPage() {
     if (!productId) return;
     try {
       setLoading(true);
-      const [prodRes, catRes] = await Promise.all([
-        productsApi.getAll(),
+      const [allProducts, catRes] = await Promise.all([
+        fetchAdminProductsWithSkus(),
         categoriesApi.listAll(),
       ]);
 
-      const allProducts = (Array.isArray(prodRes.data) ? prodRes.data : Array.isArray(prodRes.data?.items) ? prodRes.data.items : Array.isArray(prodRes.data?.products) ? prodRes.data.products : []) as Product[];
       const found = allProducts.find((p) => p.id === productId) || null;
 
       if (found) {
@@ -83,6 +85,22 @@ export default function AdminProductEditPage() {
       setError(extractErrorMessage(err));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUploadImage = async () => {
+    if (!productId || !imageFile) return;
+    setUploadingImage(true);
+    setError('');
+    try {
+      await productsApi.uploadImage(productId, imageFile);
+      setSuccess('Gambar produk berhasil diunggah.');
+      setImageFile(null);
+      await fetchProduct();
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err));
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -186,6 +204,25 @@ export default function AdminProductEditPage() {
                 style={{ width: '80px', height: '80px', objectFit: 'cover', marginTop: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
               />
             )}
+          </div>
+
+          <div>
+            <label className="form-label">Upload Gambar ke Cloudinary</label>
+            <input
+              type="file"
+              accept="image/*"
+              className="form-input"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+            />
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              style={{ marginTop: '8px' }}
+              disabled={!imageFile || uploadingImage}
+              onClick={handleUploadImage}
+            >
+              {uploadingImage ? 'Mengunggah...' : 'Unggah Gambar'}
+            </button>
           </div>
 
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { ordersApi } from '@/lib/api';
+import { parseOrdersList } from '@/lib/api-helpers';
 import { extractErrorMessage } from '@/lib/utils';
 import styles from './page.module.css';
 
@@ -28,8 +29,10 @@ interface Order {
   district?: string;
   shippingAddress?: string;
   items: OrderItem[];
-  totalPrice: number;
+  total?: number;
+  totalPrice?: number;
   createdAt: string;
+  user?: { email?: string; name?: string | null };
 }
 
 const ORDER_STATUSES = ['PENDING', 'WAITING_CONFIRMATION', 'PAID', 'SHIPPED', 'CANCELLED'];
@@ -52,9 +55,21 @@ export default function AdminPage() {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const response = await ordersApi.getMyOrders({ limit: 100 });
-        setOrders(Array.isArray(response.data) ? response.data : response.data.items || []);
         setError('');
+        try {
+          const response = await ordersApi.getAllOrders({ limit: 100 });
+          setOrders(parseOrdersList(response.data) as Order[]);
+        } catch (adminErr: any) {
+          if (adminErr.response?.status === 404) {
+            const fallback = await ordersApi.getMyOrders({ limit: 100 });
+            setOrders(parseOrdersList(fallback.data) as Order[]);
+            setError(
+              'Endpoint admin belum tersedia di backend. Menampilkan pesanan akun admin saja.'
+            );
+          } else {
+            throw adminErr;
+          }
+        }
       } catch (err: any) {
         setError(extractErrorMessage(err));
         setOrders([]);
@@ -127,7 +142,7 @@ export default function AdminPage() {
                 <div style={{ flex: 1 }}>
                   <p className="font-medium">Pesanan #{order.id}</p>
                   <p className="text-muted" style={{ fontSize: '0.875rem', marginTop: '4px' }}>
-                    {order.shippingType} • {order.items.length} item • {new Date(order.createdAt).toLocaleDateString('id-ID')}
+                    {order.user?.email ?? order.userId} • {order.shippingType} • {order.items.length} item • {new Date(order.createdAt).toLocaleDateString('id-ID')}
                   </p>
                 </div>
                 <div className={styles.orderActions} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>

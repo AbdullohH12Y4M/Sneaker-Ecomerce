@@ -3,16 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { ordersApi } from '@/lib/api';
+import { normalizeOrder } from '@/lib/api-helpers';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, formatPrice, extractErrorMessage } from '@/lib/utils';
 import type { Order, OrderItem } from '@/types';
 
-export default function OrderDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const id = params.id;
+export default function OrderDetailPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id ?? '';
   const { data: session } = useSession();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,24 +19,30 @@ export default function OrderDetailPage({
   const [uploading, setUploading] = useState(false);
   const [note, setNote] = useState('');
 
+  const loadOrder = async () => {
+    const res = await ordersApi.getById(id);
+    setOrder(normalizeOrder(res.data as Record<string, unknown>));
+    setError('');
+  };
+
   useEffect(() => {
+    if (!id) return;
     let mounted = true;
-    async function load() {
+
+    (async () => {
       setLoading(true);
       try {
-        const res = await ordersApi.getById(id);
+        await loadOrder();
         if (!mounted) return;
-        setOrder(res.data as Order);
-        setError('');
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!mounted) return;
         setError(extractErrorMessage(err));
         setOrder(null);
       } finally {
         if (mounted) setLoading(false);
       }
-    }
-    load();
+    })();
+
     return () => {
       mounted = false;
     };
@@ -48,10 +53,9 @@ export default function OrderDetailPage({
     try {
       setUploading(true);
       await ordersApi.uploadProof(id, file, uploadNote);
-      const res = await ordersApi.getById(id);
-      setOrder(res.data as Order);
+      await loadOrder();
       setNote('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(extractErrorMessage(err));
     } finally {
       setUploading(false);
@@ -90,7 +94,7 @@ export default function OrderDetailPage({
     );
   }
 
-  const canUploadProof = order.status === 'PENDING';
+  const canUploadProof = order.status === 'PENDING' && !order.paymentProofUrl;
 
   return (
     <div className="container" style={{ padding: '40px 0' }}>
@@ -110,7 +114,12 @@ export default function OrderDetailPage({
         <section className="card" style={{ padding: 24 }}>
           <h2>Informasi Pengiriman</h2>
           <p><strong>Tipe:</strong> {order.shippingType}</p>
-          <p><strong>Lokasi:</strong> {order.shippingAddress || order.shippingDistrict || 'Pengambilan'}</p>
+          <p>
+            <strong>Lokasi:</strong>{' '}
+            {order.shippingAddress || order.shippingDistrict || 'Pengambilan'}
+          </p>
+          <p><strong>Subtotal:</strong> {formatPrice((order as Order & { subtotal?: number }).subtotal ?? order.totalPrice - order.shippingCost)}</p>
+          <p><strong>Ongkir:</strong> {formatPrice(order.shippingCost)}</p>
           <p><strong>Total:</strong> {formatPrice(order.totalPrice)}</p>
           <p><strong>Tanggal:</strong> {new Date(order.createdAt).toLocaleDateString('id-ID')}</p>
           <p><strong>Metode Bayar:</strong> {order.paymentMethod}</p>
@@ -121,9 +130,9 @@ export default function OrderDetailPage({
           <h2>Item Pesanan</h2>
           {order.items.map((item: OrderItem) => (
             <div key={item.id} style={{ borderBottom: '1px solid var(--color-border)', padding: '12px 0' }}>
-              <p className="font-medium">{item.sku.product.name}</p>
-              <p className="text-muted">{item.sku.color} • {item.sku.size}</p>
-              <p>Rp{item.priceAtPurchase.toLocaleString('id-ID')} x {item.quantity}</p>
+              <p className="font-medium">{item.sku?.product?.name ?? 'Produk'}</p>
+              <p className="text-muted">{item.sku?.color} • {item.sku?.size}</p>
+              <p>{formatPrice(item.priceAtPurchase)} x {item.quantity}</p>
               <p><strong>Subtotal</strong> {formatPrice(item.priceAtPurchase * item.quantity)}</p>
             </div>
           ))}
@@ -132,39 +141,44 @@ export default function OrderDetailPage({
         {canUploadProof && (
           <section className="card" style={{ padding: 24 }}>
             <h2>Bukti Pembayaran</h2>
-            {order.paymentProofUrl ? (
-              <div>
-                <p className="font-medium">Bukti Transfer</p>
-                <a href={order.paymentProofUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">Lihat Bukti</a>
-              </div>
-            ) : (
-              <>
-                <label className="btn btn-primary btn-sm" htmlFor={`proof-${order.id}`}>
-                  {uploading ? 'Mengunggah...' : 'Unggah Bukti Transfer'}
-                  <input
-                    id={`proof-${order.id}`}
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) handleUpload(file);
-                    }}
-                  />
-                </label>
-                <div style={{ marginTop: 10 }}>
-                  <label className="form-label" htmlFor={`note-${order.id}`}>Catatan Tambahan (Opsional)</label>
-                  <textarea
-                    id={`note-${order.id}`}
-                    className="form-textarea form-input"
-                    rows={2}
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder="Transfer via BCA a/n Budi"
-                  />
-                </div>
-              </>
-            )}
+            <label className="btn btn-primary btn-sm" htmlFor={`proof-${order.id}`}>
+              {uploading ? 'Mengunggah...' : 'Unggah Bukti Transfer'}
+              <input
+                id={`proof-${order.id}`}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) handleUpload(file);
+                }}
+              />
+            </label>
+            <div style={{ marginTop: 10 }}>
+              <label className="form-label" htmlFor={`note-${order.id}`}>Catatan Tambahan (Opsional)</label>
+              <textarea
+                id={`note-${order.id}`}
+                className="form-textarea form-input"
+                rows={2}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Transfer via BCA a/n Budi"
+              />
+            </div>
+          </section>
+        )}
+
+        {order.paymentProofUrl && (
+          <section className="card" style={{ padding: 24 }}>
+            <h2>Bukti Pembayaran</h2>
+            <a
+              href={order.paymentProofUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-secondary btn-sm"
+            >
+              Lihat Bukti Transfer
+            </a>
           </section>
         )}
       </div>

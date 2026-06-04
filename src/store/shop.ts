@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { productsApi } from '@/lib/api';
+import { parseProductsList } from '@/lib/api-helpers';
 
 interface FilterPayload {
   category?: string;
@@ -30,17 +31,13 @@ export const useShopStore = create<ShopState>((set, get) => ({
   fetchProducts: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await productsApi.getAll();
+      const response = await productsApi.getAll({ limit: 100 });
+      const categoriesFromApi =
+        response.data && typeof response.data === 'object' && !Array.isArray(response.data)
+          ? (response.data as { categories?: unknown[] }).categories ?? []
+          : [];
 
-      // Swagger: /products/all => { products: [...], categories: [...] }
-      const productsFromApi = response.data?.products ?? response.data?.items ?? response.data?.itemsList ?? response.data ?? [];
-      const categoriesFromApi = response.data?.categories ?? [];
-
-      const normalizedProducts = (productsFromApi as any[]).map((product: any) => ({
-        ...product,
-        images: product.images && product.images.length > 0 ? product.images : ['/placeholder-shoes.png'],
-        category: product.category?.name || product.category || 'Uncategorized',
-      }));
+      const normalizedProducts = parseProductsList(response.data);
 
       const categoriesNormalized =
         Array.isArray(categoriesFromApi) && categoriesFromApi.length

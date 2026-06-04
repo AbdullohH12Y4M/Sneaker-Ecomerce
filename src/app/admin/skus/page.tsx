@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { productsApi } from '@/lib/api';
+import { fetchAdminProductsWithSkus } from '@/lib/api-helpers';
 import { formatPrice, extractErrorMessage } from '@/lib/utils';
 import type { Product, ProductSKU } from '@/types';
 import styles from './page.module.css';
@@ -26,9 +27,7 @@ export default function AdminSkusPage() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await productsApi.getAll();
-      const data = response.data as any;
-      const items = Array.isArray(data) ? data : data?.items || data?.products || [];
+      const items = await fetchAdminProductsWithSkus();
       setProducts(items);
       setError('');
     } catch (err: any) {

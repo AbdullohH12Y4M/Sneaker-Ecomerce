@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { productsApi, categoriesApi } from '@/lib/api';
+import { parseProductsList } from '@/lib/api-helpers';
 import { formatPrice, extractErrorMessage } from '@/lib/utils';
 import type { Product, ProductSKU, Category } from '@/types';
 import styles from './page.module.css';
@@ -17,6 +18,8 @@ export default function AdminProductsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showSkuForm, setShowSkuForm] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
 
   const [productForm, setProductForm] = useState({
     categoryId: '',
@@ -45,10 +48,8 @@ export default function AdminProductsPage() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await productsApi.getAll();
-      const data = response.data as any;
-      const items = Array.isArray(data) ? data : data?.items || data?.products || [];
-      setProducts(items);
+      const response = await productsApi.getAll({ limit: 100 });
+      setProducts(parseProductsList(response.data));
       setError('');
     } catch (err: any) {
       setError(extractErrorMessage(err));
@@ -88,7 +89,12 @@ export default function AdminProductsPage() {
       const res = await productsApi.create(payload);
       const newId = res?.data?.id;
 
+      if (newId && productImageFile) {
+        await productsApi.uploadImage(newId, productImageFile);
+      }
+
       setShowCreateForm(false);
+      setProductImageFile(null);
       setProductForm({ categoryId: '', name: '', slug: '', description: '', basePrice: '', imageUrl: '', isActive: true });
       fetchProducts();
 
@@ -198,6 +204,15 @@ export default function AdminProductsPage() {
             <div>
               <label className="form-label">URL Gambar (opsional)</label>
               <input className="form-input" value={productForm.imageUrl} onChange={(e) => setProductForm({ ...productForm, imageUrl: e.target.value })} />
+            </div>
+            <div>
+              <label className="form-label">Upload Gambar (opsional)</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="form-input"
+                onChange={(e) => setProductImageFile(e.target.files?.[0] ?? null)}
+              />
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>

@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import api from '@/lib/api';
+import { productsApi } from '@/lib/api';
+import { parseProductsList } from '@/lib/api-helpers';
 import FilterSidebar from '@/components/shop/FilterSidebar';
 import ProductCard from '@/components/shop/ProductCard';
 import { mockProducts } from '@/data/mockProducts';
@@ -33,35 +34,29 @@ export default function SearchPage() {
       setIsFromMock(false);
 
       try {
-        const requestParams: Record<string, any> = {};
-        if (category) requestParams.category = category;
+        const requestParams: Record<string, string | number> = { limit: 100 };
+        if (category) requestParams.categorySlug = category.toLowerCase();
         if (color) requestParams.color = color;
         if (size) requestParams.size = size;
         if (minPrice) requestParams.minPrice = minPrice;
         if (maxPrice) requestParams.maxPrice = maxPrice;
-        if (search) requestParams.search = search;
+        if (search) requestParams.q = search;
 
-        const res = await api.get('/products', { params: requestParams });
+        const res = await productsApi.getAll(requestParams);
         const raw = res.data;
+        const serverCategories: string[] =
+          raw && typeof raw === 'object' && !Array.isArray(raw) && Array.isArray((raw as { categories?: unknown[] }).categories)
+            ? ((raw as { categories: unknown[] }).categories as string[])
+            : [];
 
-        const items = raw?.products ?? raw?.items ?? raw?.itemsList ?? (Array.isArray(raw) ? raw : []) ?? [];
-        const serverCategories: string[] = Array.isArray(raw?.categories) ? raw.categories : [];
-
-        const normalized = (items as any[]).map((product: any) => ({
-          ...product,
-          images: product.images && product.images.length > 0 ? product.images : ['/placeholder-shoes.png'],
-          category: typeof product.category === 'object' && product.category !== null
-            ? (product.category.name ?? product.category.slug ?? 'Uncategorized')
-            : (product.category || 'Uncategorized'),
-          _mock: false,
-        }));
+        const normalized = parseProductsList(raw).map((p) => ({ ...p, _mock: false }));
 
         const categoriesNormalized =
           serverCategories.length
-            ? serverCategories.map((c: any) =>
-                typeof c === 'string' ? c : (c?.name ?? c?.slug ?? null)
+            ? serverCategories.map((c: unknown) =>
+                typeof c === 'string' ? c : ((c as { name?: string; slug?: string })?.name ?? (c as { slug?: string }).slug ?? null)
               ).filter(Boolean)
-            : Array.from(new Set(normalized.map((p: any) => p.category).filter(Boolean)));
+            : Array.from(new Set(normalized.map((p) => p.category).filter(Boolean)));
 
         const uniqueCategories = Array.from(new Set(categoriesNormalized));
 

@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { Providers } from '@/components/providers';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import DevMockBanner from '@/components/dev/DevMockBanner';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default async function RootLayout({
       <body>
         <Providers session={session}>
           <div className="page-wrapper">
+            <DevMockBanner />
             <Navbar />
             <main className="page-main">{children}</main>
             <Footer />

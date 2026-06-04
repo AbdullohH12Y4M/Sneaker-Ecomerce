@@ -11,7 +11,6 @@ import styles from './page.module.css';
 export default function RegisterPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [role, setRole] = useState<'CUSTOMER' | 'ADMIN'>('CUSTOMER');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -52,12 +51,7 @@ export default function RegisterPage() {
     }
 
     try {
-      let response;
-      if (role === 'ADMIN') {
-        response = await authApi.registerAdmin({ email, password });
-      } else {
-        response = await authApi.registerCustomer({ email, password });
-      }
+      const response = await authApi.registerCustomer({ email, password });
 
       if (response?.status === 201 || response?.data?.user) {
         setMessage('Akun berhasil dibuat. Silakan login.');
@@ -83,29 +77,6 @@ export default function RegisterPage() {
           <p className="text-muted">Buat akun untuk mulai berbelanja di SneakerLocal.</p>
 
           <form onSubmit={handleRegister}>
-            <div className={styles.roleToggle}>
-              <button
-                type="button"
-                className={`${styles.roleBtn} ${role === 'CUSTOMER' ? styles.roleBtnActive : ''}`}
-                onClick={() => setRole('CUSTOMER')}
-              >
-                Pelanggan
-              </button>
-              <button
-                type="button"
-                className={`${styles.roleBtn} ${role === 'ADMIN' ? styles.roleBtnActive : ''}`}
-                onClick={() => setRole('ADMIN')}
-              >
-                Admin
-              </button>
-            </div>
-
-            {role === 'ADMIN' && (
-              <div className={styles.adminNotice}>
-                Registrasi Admin memerlukan akses khusus. Pastikan Anda memiliki izin dari pemilik toko.
-              </div>
-            )}
-
             <div className={styles.fieldGroup}>
               <label className="form-label" htmlFor="email">Email</label>
               <input

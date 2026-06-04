@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { categoriesApi, productsApi } from '@/lib/api';
+import { parseProductsList } from '@/lib/api-helpers';
 import type { Category } from '@/types';
 import ProductCard from '@/components/shop/ProductCard';
 import styles from './page.module.css';
@@ -32,18 +33,15 @@ export default function CategoryDetailPage() {
     if (!categoryId) return;
     try {
       setLoading(true);
-      const [catRes, prodRes] = await Promise.all([
-        categoriesApi.getOne(categoryId),
-        productsApi.getAll({ category: categoryId }),
-      ]);
-      setCategory(catRes.data as Category);
-      const data = prodRes.data;
-      const items = Array.isArray(data) ? (data as Product[]) : Array.isArray((data as any)?.items) ? (data as any).items : Array.isArray((data as any)?.products) ? (data as any).products : [];
-      const normalized = (items as Product[]).map((p: any) => ({
-        ...p,
-        images: p.images && p.images.length > 0 ? p.images : ['/placeholder-shoes.png'],
-      }));
-      setProducts(normalized);
+      const catRes = await categoriesApi.getOne(categoryId);
+      const cat = catRes.data as Category;
+      setCategory(cat);
+
+      const prodRes = await productsApi.getAll({
+        limit: 100,
+        categorySlug: cat.slug,
+      });
+      setProducts(parseProductsList(prodRes.data) as Product[]);
       setError('');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Gagal memuat data kategori.');
