@@ -45,16 +45,14 @@ export default api;
 
 // Products
 export const productsApi = {
-  // Existing (backend: /products)
-  // List semua produk (termasuk non-aktif) untuk admin
   getAll: (params?: Record<string, unknown>) =>
     api.get('/products', { params }),
-  getAllPublic: () => api.get('/products/all'),
+  getAllPublic: (params?: Record<string, unknown>) =>
+    api.get('/products', { params: { ...params, limit: 100 } }),
   getBySlug: (slug: string) =>
     api.get(`/products/${slug}`),
   getById: (id: string) =>
     api.get(`/products?id=${id}`),
-  // Disesuaikan ke JSON body sesuai spesifikasi backend (termasuk penentuan type 'PRODUCT'/'SKU')
   create: (data: { type: 'PRODUCT' | 'SKU'; categoryId?: string; name?: string; slug?: string; basePrice?: number; color?: string; size?: string; initialStock?: number }) =>
     api.post('/products', data),
   updateProduct: (id: string, data: any) =>
@@ -74,7 +72,8 @@ export const productsApi = {
 export const categoriesApi = {
   getAll: (params?: Record<string, unknown>) =>
     api.get('/categories', { params }),
-  listAll: () => api.get('/categories/all'),
+  listAll: (params?: Record<string, unknown>) =>
+    api.get('/categories', { params: { ...params, limit: 100 } }),
   getOne: (id: string) => api.get(`/categories/${id}`),
   create: (data: any) => api.post('/categories', data),
   update: (id: string, data: any) => api.patch(`/categories/${id}`, data),
