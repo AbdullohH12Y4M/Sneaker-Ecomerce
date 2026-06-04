@@ -1,0 +1,80 @@
+.heroPage {
+  padding-bottom: 48px;
+}
+
+.heroPage .heroPage {
+  padding-bottom: 0;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sectionLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.sectionTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 8px 0 0;
+}
+
+.sectionMeta {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.shopGrid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.sidebarWrapper {
+  position: sticky;
+  top: 88px;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.emptyState {
+  grid-column: 1 / -1;
+  padding: 48px 24px;
+  text-align: center;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-2);
+}
+
+.heroPage .container {
+  padding-top: 24px;
+}
+
+@media (max-width: 840px) {
+  .shopGrid {
+    grid-template-columns: 1fr;
+  }
+  .sidebarWrapper {
+    position: static;
+  }
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
